@@ -1,0 +1,70 @@
+# {{ project_name }}
+
+> Purpose: {{ description }} _Refine this line once the first product spec is approved; see [docs/ideas/](docs/ideas/)._
+
+A **monorepo of loosely related applications** (ADR-0010) developed with specification-driven development. This file holds the rules for the whole repo. Each app adds its own rules in `apps/<app>/CLAUDE.md`, which Claude Code loads when it works in that folder.
+
+## Where things live
+
+Two levels (ADR-0011): the root describes the **system**, `apps/<app>/` describes **one app**.
+
+| Path | What it holds |
+|------|---------------|
+| [apps/](apps/README.md) | One folder per application: code, `CLAUDE.md`, `.env.example`, and `docs/` (the app's specs, architecture, ADRs, metrics) |
+| [shared/](shared/README.md) | Shared code (`shared/<component>/`) and dataset contracts ([shared/contracts/](shared/contracts/README.md)) |
+| [data/](data/README.md) | Default `SHARED_DATA_DIR`: shared datasets at runtime (git-ignored) |
+| [.env.example](.env.example) | Base environment for every app (Claude API key, model, shared data dir); apps layer their own `.env` on top (ADR-0012) |
+| [docs/ideas/](docs/ideas/) | Every idea, verbatim, with a Q&A log; one number sequence for the whole repo |
+| [docs/specs/](docs/specs/) | Specs that span apps or touch shared code or data, and the index of **all** specs (single-app specs live in `apps/<app>/docs/specs/`) |
+| [docs/architecture/architecture.md](docs/architecture/architecture.md) | The **system** architecture: context, the generated system map of apps, datasets and shared code, cross-app flows |
+| [docs/architecture/components.json](docs/architecture/components.json) | Single source of truth for apps, shared components and datasets, with `mayDependOn`, `reads`, `writes` |
+| [docs/architecture/adr/](docs/architecture/adr/) | Root ADRs (system-wide decisions). App ADRs are in `apps/<app>/docs/architecture/adr/`, cited as `<app>/ADR-NNNN` |
+| [docs/architecture/metrics/](docs/architecture/metrics/) | Metric definitions and thresholds (for both levels), system-level snapshots |
+| [docs/research/](docs/research/README.md) | Research reports, notes and brainstorming transcripts that inform ideas and specs |
+| [docs/sessions/](docs/sessions/) | Saved sessions (history only, never the source of truth) |
+| [docs/templates/](docs/templates/) | Templates for ideas, specs, plans, tasks and ADRs (both levels) |
+| [tools/env/with-env.sh](tools/env/with-env.sh) | Runs a command with the layered environment of an app |
+| [tools/monorepo/](tools/monorepo/) | `new.sh` (scaffold apps, shared code, datasets) and `system-map.sh` (check rules, render the system map) |
+| [tools/quality/](tools/quality/) | Language registry and quality-gate hooks |
+| [.pre-commit-config.yaml](.pre-commit-config.yaml), [.github/workflows/security.yml](.github/workflows/security.yml) | Security and quality checks, run locally and in CI (ADR-0008) |
+| [tools/bootstrap-github.sh](tools/bootstrap-github.sh) | Applies branch protection and GitHub security settings (ADR-0009) |
+| [tools/sessions/](tools/sessions/) | `save-session.sh`, run by the `SessionEnd` hook (ADR-0007) |
+
+## How we work: specification-driven development
+
+No code gets written until there is an approved spec for it.
+
+```
+idea  ──/idea──▶ docs/ideas/NNNN-slug.md                 (original wording + Q&A log; always at the root)
+      ──/spec──▶ <level>/docs/specs/NNNN-slug/spec.md    (WHAT and WHY; level = root or apps/<app>, by scope)
+      ──/plan──▶ plan.md + tasks.md                      (HOW: design; ADRs at the right level; architecture docs updated)
+      ──/implement──▶ code + tests                       (test-first; quality gate passes)
+      ──/review-spec──▶ independent check + metrics snapshot
+```
+
+- `NNNN` is shared: idea `0003` becomes spec `0003-*`, wherever it lives. Root ADRs and each app's ADRs have their own numbering.
+- **Scope** of an idea is `system` (several apps, shared code, shared data, repo tooling) or one app. `/spec` decides it with the user and records it in the idea and the spec.
+- Run each stage in a **fresh session** (`/clear`), so the files carry the context instead of the chat history.
+- Other skills: `/scaffold` creates an app, shared component or dataset; `/adr` records a decision; `/arch-metrics` computes and stores metrics; `/add-language` sets up the quality gate for a new programming language.
+
+## Rules
+
+1. **Never rewrite an original idea.** The `## Original idea` section is the user's exact words.
+2. **Log every question.** Each question you ask the user (in chat or through AskUserQuestion), the options you offered and the user's answer go into the related idea's `## Q&A log`, right after the answer arrives. Questions the user asks about an idea, and your answers, are logged there too.
+3. **The spec is the source of truth.** If you find mid-work that it is wrong, stop, ask (and log it), update the spec, then continue.
+4. **Every requirement needs a check.** Each acceptance criterion must be testable, and the plan names the test that verifies it.
+5. **Architecture docs change in the same change as the code, at the right level.** A new or re-wired app, shared component or dataset changes the root `components.json` (then run `tools/monorepo/system-map.sh`). A component inside an app changes that app's `components.json` and `architecture.md`. Decisions another app could notice (shared code, a dataset contract, a base env variable, repo tooling, a rule for all apps) are **root ADRs**; decisions inside one app are **app ADRs** (`/adr --app <app>`). Accepted ADRs are never edited, only superseded.
+6. **Apps are loosely coupled.** An app never imports from another app. Apps share code only through `shared/<component>` public entry points listed in their `mayDependOn`, and share data only through datasets: one owner writes, readers rely on the contract in `shared/contracts/<dataset>/` (ADR-0013). A breaking contract change needs a root ADR and a change for every reader.
+7. **High cohesion, low coupling are enforced, not hoped for**, at both levels. No dependency cycles. Functions stay within the complexity limits in [docs/architecture/metrics/README.md](docs/architecture/metrics/README.md). Don't weaken a threshold or a boundary rule without an ADR.
+8. **Configuration comes from the layered environment** (ADR-0012): process env > `apps/<app>/.env` > root `.env`. Run apps through `tools/env/with-env.sh <app> -- <command>`. A new variable goes into the matching `.env.example` (root if every app needs it, else the app's) in the same change. Never read, print or ask for the contents of a `.env` file; use `with-env.sh <app> --print` to see which keys are set.
+9. **New programming language ⇒ `/add-language` first.** A hook blocks writing source files in a language that is not registered in [tools/quality/languages.json](tools/quality/languages.json). Do not get around it (for example by writing the file through Bash).
+10. **{% if visibility == 'public' %}This repo is public.{% else %}Treat this repo as public: private repos get published later.{% endif %}** Never commit secrets, tokens, personal data or shared runtime data. Never bypass the hooks (`--no-verify`). If gitleaks flags something, remove it; only allowlist a confirmed false positive in `.gitleaks.toml`, with a comment.
+11. **Keep status fields and indexes current**: the `Status:` lines, [docs/ideas/README.md](docs/ideas/README.md), [docs/specs/README.md](docs/specs/README.md) (all specs, both levels), and the ADR index at the level where an ADR was added.
+
+## Conventions
+
+- After cloning: `brew install gitleaks pre-commit jq && pre-commit install`, then `cp .env.example .env` and fill it in. Check an app's environment: `tools/env/with-env.sh <app> --check`. Run every check: `pre-commit run --all-files`.
+- GitHub protection (once, after the first push): `tools/bootstrap-github.sh`.
+- This project was generated from [sdd-template-for-monorepo-with-claude](https://github.com/belaboros/sdd-template-for-monorepo-with-claude). Pull template improvements with `copier update --trust` on a clean branch, and review the diff. Never edit `.copier-answers.yml` by hand.
+- Names of apps, shared components and datasets are kebab-case. Dates are absolute (`YYYY-MM-DD`). Diagrams are Mermaid in Markdown (ADR-0004).
+- Tech stack, build, test, lint and metrics commands: _added here (repo-wide) or in `apps/<app>/CLAUDE.md` (per app) by `/add-language` and `/plan`._

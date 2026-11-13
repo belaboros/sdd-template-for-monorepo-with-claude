@@ -1,0 +1,70 @@
+# Copier template: a monorepo of loosely related applications, built with spec-driven development in Claude Code.
+# New project:  copier copy --trust gh:belaboros/sdd-template-for-monorepo-with-claude <dir>
+# Update later: copier update --trust      (run inside the project, on a clean branch)
+
+_min_copier_version: "9.4"
+_subdirectory: template
+_answers_file: .copier-answers.yml
+
+project_name:
+  type: str
+  help: Project name of the monorepo (shown in CLAUDE.md, architecture.md)
+  validator: "{% if not project_name.strip() %}Required{% endif %}"
+
+project_slug:
+  type: str
+  help: GitHub repository name
+  default: "{{ project_name | lower | replace(' ', '-') }}"
+  validator: "{% if not (project_slug | regex_search('^[A-Za-z0-9._-]+$')) %}Letters, digits, '.', '_' and '-' only{% endif %}"
+
+description:
+  type: str
+  help: One sentence on what the applications in this monorepo are for together (can be refined later)
+  default: "_Not yet defined._"
+
+github_owner:
+  type: str
+  help: GitHub user or organisation that owns the repository
+  default: belaboros
+
+visibility:
+  type: str
+  help: Repository visibility
+  choices: [public, private]
+  default: public
+
+license:
+  type: str
+  help: License
+  choices: [Apache-2.0, MIT, none]
+  default: Apache-2.0
+
+initial_apps:
+  type: str
+  help: "Apps to scaffold now, comma-separated kebab-case names (e.g. downloader,assistant,reviewer); leave empty to add them later with /scaffold"
+  default: ""
+  validator: "{% if initial_apps.strip() and not (initial_apps.replace(' ', '') | regex_search('^[a-z][a-z0-9-]*(,[a-z][a-z0-9-]*)*$')) %}Comma-separated kebab-case names only{% endif %}"
+
+copyright_holder:
+  type: str
+  help: Copyright holder for the license
+  default: "{{ github_owner }}"
+  when: "{{ license != 'none' }}"
+
+_tasks:
+  - command: "git init -q -b main"
+    when: "{{ _copier_operation == 'copy' }}"
+  - command: "chmod +x tools/quality/check-language-registered.sh tools/sessions/save-session.sh tools/bootstrap-github.sh tools/env/with-env.sh tools/monorepo/new.sh tools/monorepo/system-map.sh"
+  - command: "{% for app in initial_apps.replace(' ', '').split(',') if app %}tools/monorepo/new.sh app {{ app }} && {% endfor %}true"
+    when: "{{ _copier_operation == 'copy' and initial_apps.strip() != '' }}"
+  - command: "command -v pre-commit >/dev/null && pre-commit install || echo 'pre-commit not installed: brew install gitleaks pre-commit && pre-commit install'"
+
+_message_after_copy: |
+  {{ project_name }} is ready. Next:
+    cd {{ _copier_conf.dst_path }}
+    git add -A && git commit -m "Initial project from sdd-template-for-monorepo-with-claude"
+    gh repo create {{ github_owner }}/{{ project_slug }} --{{ visibility }} --source . --push
+    tools/bootstrap-github.sh        # branch protection + GitHub security settings
+    cp .env.example .env             # then set ANTHROPIC_API_KEY (never commit .env)
+  Then open Claude Code and run: /scaffold app <name>   (if you have not listed apps yet)
+                                 /idea <your first idea>
