@@ -1,6 +1,6 @@
 # ADR-0007: Save session history as curated transcripts in `docs/sessions/`
 
-- **Status:** accepted
+- **Status:** superseded by [ADR-0014](0014-save-each-session-once-with-subagent-output.md)
 - **Date:** 2026-11-09
 - **Origin:** foundation decision inherited from [sdd-template-for-claude](https://github.com/belaboros/sdd-template-for-claude)
 
