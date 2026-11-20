@@ -13,7 +13,7 @@ Commit, push and merge the current branch (ADR-0017). Running this command is th
 - Branch: !`git rev-parse --abbrev-ref HEAD`
 - Changes:
 !`git status --short`
-- Unpushed commits: !`git log --oneline @{u}..HEAD 2>/dev/null || echo "(branch has no upstream yet)"`
+- Upstream and commits ahead of it (`[ahead N]`; no `...origin/` part means the branch has no upstream yet): !`git status -sb --untracked-files=no`
 - Recent commit messages (style to follow): !`git log --oneline -5`
 
 Commit message given by the user (may be empty): $ARGUMENTS
