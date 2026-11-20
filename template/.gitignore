@@ -12,10 +12,6 @@ credentials*.json
 secrets*.json
 *.secret
 
-# Shared runtime data (ADR-0013): only the README is committed; contracts live in libs/contracts/
-/data/*
-!/data/README.md
-
 # Claude Code personal settings (the shared .claude/settings.json is committed)
 .claude/settings.local.json
 
@@ -28,3 +24,8 @@ secrets*.json
 # Tool output
 /gitleaks
 gitleaks.tar.gz
+
+# Shared runtime data (ADR-0016): data/ is committed by default. Each data/<dataset>/ that must
+# stay out of git gets its own line below (tools/monorepo/new.sh adds it for `ignore` datasets,
+# tools/monorepo/system-map.sh checks it against "git" in docs/architecture/components.json).
+# Keep this section last, so new lines land here.

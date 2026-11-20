@@ -6,6 +6,7 @@
 | **Owner (only writer)** | `__OWNER__` |
 | **Readers** | see the system map in the [root architecture](../../../docs/architecture/architecture.md) |
 | **Location at runtime** | `${SHARED_DATA_DIR}/__NAME__/` (`SHARED_DATA_DIR` comes from the root `.env`) |
+| **In git** | __GIT__: see `git` in the root `components.json` and `.gitignore` (ADR-0016) |
 | **Contract version** | 0.1.0 (see [CHANGELOG.md](CHANGELOG.md)) |
 
 The contract is what readers may rely on (ADR-0013). Anything not written here is an implementation detail of `__OWNER__` and may change without notice.

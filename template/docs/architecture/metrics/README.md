@@ -46,12 +46,12 @@ Notes:
   ],
   "datasets": [
     { "name": "knowledge-graph", "owner": "downloader", "description": "Glossary, ontology and graph.",
-      "contract": "libs/contracts/knowledge-graph/", "location": "${SHARED_DATA_DIR}/knowledge-graph" }
+      "contract": "libs/contracts/knowledge-graph/", "location": "${SHARED_DATA_DIR}/knowledge-graph", "git": "ignore" }
   ]
 }
 ```
 
-`mayDependOn` (of an app or a library) may only name libraries (`kind: "lib"`). Only an app's `writes` may name a dataset it owns.
+`mayDependOn` (of an app or a library) may only name libraries (`kind: "lib"`). Only an app's `writes` may name a dataset it owns. A dataset's `git` is `commit` or `ignore`: whether `data/<dataset>/` goes into git; `ignore` needs a `/data/<dataset>/` line in `.gitignore` (ADR-0016).
 
 **App level** (`apps/<app>/docs/architecture/components.json`), paths relative to the repo root:
 
