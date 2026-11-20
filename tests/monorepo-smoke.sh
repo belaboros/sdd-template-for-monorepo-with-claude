@@ -88,4 +88,15 @@ for f in .env apps/smoke-reader/.env data/smoke-data/x; do git check-ignore -q "
 for f in data/README.md data/smoke-seed/x data/unlisted/x; do ! git check-ignore -q "$f" || fail "$f must not be ignored"; done
 ! git check-ignore -q apps/smoke-reader/.env.example || fail ".env.example must not be ignored"
 ok "gitignore covers nested .env files; data/<dataset>/ is ignored only by choice"
+# --- protect-main hook ---
+hook() { jq -nc --arg c "$1" '{tool_input:{command:$c}}' | tools/git/protect-main-branch.sh 2>/dev/null; }
+for c in 'git branch -D main' 'git -C . branch --delete main' 'git switch x && git branch -d main' 'git push origin --delete main' \
+         'git push origin :main' 'git update-ref -d refs/heads/main' 'gh api -X DELETE repos/o/r/git/refs/heads/main'; do
+  expect_fail hook "$c"
+done
+for c in 'git branch -d feat/x' 'git branch -d feat/x && git push origin main' 'git branch -D maintenance' \
+         'git push origin --delete feat/main' 'gh pr merge --merge --delete-branch'; do
+  hook "$c" || fail "hook blocked: $c"
+done
+ok "protect-main hook blocks deleting main and allows feature-branch deletes"
 echo "monorepo smoke test passed"

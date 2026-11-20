@@ -28,6 +28,7 @@ Two levels (ADR-0011): the root describes the **system**, `apps/<app>/` describe
 | [tools/quality/](tools/quality/) | Language registry and quality-gate hooks |
 | [.pre-commit-config.yaml](.pre-commit-config.yaml), [.github/workflows/security.yml](.github/workflows/security.yml) | Security and quality checks, run locally and in CI (ADR-0008) |
 | [tools/bootstrap-github.sh](tools/bootstrap-github.sh) | Applies branch protection and GitHub security settings (ADR-0009) |
+| [tools/git/protect-main-branch.sh](tools/git/protect-main-branch.sh) | Hook that blocks deleting the `main` branch (ADR-0017) |
 | [tools/sessions/](tools/sessions/) | `save-session.sh`, run by `/save-claude-chat-session [name]` and the `SessionEnd` hook; saves each session once (ADR-0014) |
 
 ## How we work: specification-driven development
@@ -45,7 +46,7 @@ idea  ──/idea──▶ docs/ideas/NNNN-slug.md                 (original wor
 - `NNNN` is shared: idea `0003` becomes spec `0003-*`, wherever it lives. Root ADRs and each app's ADRs have their own numbering.
 - **Scope** of an idea is `system` (several apps, libraries, shared data, repo tooling) or one app. `/spec` decides it with the user and records it in the idea and the spec.
 - Run each stage in a **fresh session** (`/clear`), so the files carry the context instead of the chat history.
-- Other skills: `/scaffold` creates an app, library or dataset; `/adr` records a decision; `/arch-metrics` computes and stores metrics; `/add-language` sets up the quality gate for a new programming language.
+- Other skills: `/scaffold` creates an app, library or dataset; `/adr` records a decision; `/arch-metrics` computes and stores metrics; `/add-language` sets up the quality gate for a new programming language; `/commit-push-merge-feature-branch [message]` commits everything, pushes, merges the feature branch into `main` through a PR once its checks pass, and deletes the branch (ADR-0017).
 
 ## Rules
 

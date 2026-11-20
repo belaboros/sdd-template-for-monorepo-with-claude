@@ -33,6 +33,7 @@ A [Copier](https://copier.readthedocs.io/) template for a **monorepo of loosely 
 │   └── templates/
 └── tools/
     ├── env/with-env.sh        # run a command with the layered environment of an app
+    ├── git/                   # hook that blocks deleting main
     ├── monorepo/              # new.sh (scaffold) + system-map.sh (check rules, render the map)
     ├── quality/               # language registry + quality-gate hook
     └── sessions/              # session saver
@@ -44,9 +45,9 @@ A [Copier](https://copier.readthedocs.io/) template for a **monorepo of loosely 
 | **Shared data** (ADR-0013, ADR-0015) | Each dataset has one owning app, its only writer. Readers rely on a versioned contract in `libs/contracts/<dataset>/`. Runtime data lives in `${SHARED_DATA_DIR}`, which is git-ignored. |
 | **Layered env** (ADR-0012) | Root `.env` is the base; `apps/<app>/.env` adds or overrides keys. Precedence: process env > app `.env` > root `.env`. `tools/env/with-env.sh <app> -- <cmd>` runs a command with that environment. `--check` reports missing keys; `--print` shows each key's source, never its value. The loader never `eval`s anything and runs on bash 3.2. |
 | **Two-level docs** (ADR-0011) | The system level sits at the root, each app in `apps/<app>/docs/`. Ideas are always captured at the root; `/spec` decides the scope and writes the spec at the matching level. Root ADRs are `ADR-NNNN`; app ADRs are `<app>/ADR-NNNN`. Nested `CLAUDE.md` files layer the instructions. |
-| **Workflow** | `/idea` → `/spec` → `/plan` → `/implement` → `/review-spec`, plus `/adr`, `/scaffold`, `/arch-metrics`, `/add-language`, and a `spec-reviewer` subagent. Original ideas are stored verbatim, with a Q&A log of every question. |
+| **Workflow** | `/idea` → `/spec` → `/plan` → `/implement` → `/review-spec`, plus `/adr`, `/scaffold`, `/arch-metrics`, `/add-language`, `/commit-push-merge-feature-branch` (commit, push, merge through a PR, delete the branch; ADR-0017), and a `spec-reviewer` subagent. Original ideas are stored verbatim, with a Q&A log of every question. |
 | **Modularity** | Complexity and coupling metrics at system level (apps and libraries) and at app level. A hook blocks code in any language that has no quality gate yet; `/add-language` generates boundary rules from both levels. |
-| **Session history and security** | Inherited unchanged: curated session transcripts; gitleaks, shellcheck and zizmor in pre-commit and CI; Dependabot; branch protection via `tools/bootstrap-github.sh`. Claude is denied reading `.env` files at every level. |
+| **Session history and security** | Inherited unchanged: curated session transcripts; gitleaks, shellcheck and zizmor in pre-commit and CI; Dependabot; branch protection via `tools/bootstrap-github.sh`, plus a hook that stops Claude deleting `main`. Claude is denied reading `.env` files at every level. |
 
 ## Start a new project
 
