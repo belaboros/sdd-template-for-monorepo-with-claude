@@ -54,7 +54,7 @@ copyright_holder:
 _tasks:
   - command: "git init -q -b main"
     when: "{{ _copier_operation == 'copy' }}"
-  - command: "chmod +x tools/quality/check-language-registered.sh tools/sessions/save-session.sh tools/bootstrap-github.sh tools/env/with-env.sh tools/monorepo/new.sh tools/monorepo/system-map.sh"
+  - command: "chmod +x tools/quality/check-language-registered.sh tools/sessions/save-session.sh tools/bootstrap-github.sh tools/env/with-env.sh tools/monorepo/new.sh tools/monorepo/system-map.sh tools/git/protect-main-branch.sh"
   - command: "{% for app in initial_apps.replace(' ', '').split(',') if app %}tools/monorepo/new.sh app {{ app }} && {% endfor %}true"
     when: "{{ _copier_operation == 'copy' and initial_apps.strip() != '' }}"
   - command: "command -v pre-commit >/dev/null && pre-commit install || echo 'pre-commit not installed: brew install gitleaks pre-commit && pre-commit install'"
