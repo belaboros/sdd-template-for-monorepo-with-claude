@@ -1,0 +1,4 @@
+{
+  "$comment": "Logical components inside the __NAME__ app. Paths are relative to the repository root and must stay under apps/__NAME__/. Dependencies on libraries are declared at system level (root docs/architecture/components.json) and may be listed here as external.",
+  "components": []
+}

@@ -1,0 +1,30 @@
+# Secrets and credentials: never commit (any folder, so apps/<app>/.env too)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+secrets*.json
+*.secret
+
+# Shared runtime data (ADR-0013): only the README is committed; contracts live in libs/contracts/
+/data/*
+!/data/README.md
+
+# Claude Code personal settings (the shared .claude/settings.json is committed)
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Tool output
+/gitleaks
+gitleaks.tar.gz

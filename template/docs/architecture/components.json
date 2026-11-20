@@ -1,0 +1,5 @@
+{
+  "$comment": "System level: the apps, the libraries and the shared datasets of this monorepo (ADR-0010, ADR-0013). Each app's internal components are in apps/<app>/docs/architecture/components.json. Validated and rendered into architecture.md by tools/monorepo/system-map.sh; schema in docs/architecture/metrics/README.md#components-files.",
+  "components": [],
+  "datasets": []
+}
