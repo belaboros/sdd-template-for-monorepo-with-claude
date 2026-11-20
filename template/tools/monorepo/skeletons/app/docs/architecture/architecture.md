@@ -5,7 +5,7 @@
 - **Part of:** the system described in the [root architecture](../../../../docs/architecture/architecture.md)
 - **Decisions:** [app ADRs](adr/README.md) · [root ADRs](../../../../docs/architecture/adr/README.md) · **Metrics:** [latest](metrics/latest.md)
 
-> This document describes the inside of the __NAME__ app as it is *now*. What the app reads and writes, and which shared code it uses, is declared at system level in the root [components.json](../../../../docs/architecture/components.json) and shown in the root architecture's system map; don't repeat it here, link to it. Components inside the app come from this folder's [components.json](components.json); the diagrams here must match it.
+> This document describes the inside of the __NAME__ app as it is *now*. What the app reads and writes, and which libraries it uses, is declared at system level in the root [components.json](../../../../docs/architecture/components.json) and shown in the root architecture's system map; don't repeat it here, link to it. Components inside the app come from this folder's [components.json](components.json); the diagrams here must match it.
 
 ## 1. Purpose and scope
 
@@ -15,7 +15,7 @@ _What it deliberately does not do: filled in from the first approved spec._
 
 ## 2. Context
 
-Who uses this app, and which shared datasets, shared code and external systems it touches.
+Who uses this app, and which shared datasets, libraries and external systems it touches.
 
 ```mermaid
 flowchart LR

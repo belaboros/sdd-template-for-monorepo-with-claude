@@ -38,8 +38,8 @@ repos:
   - repo: local
     hooks:
       - id: system-map
-        name: system map (components.json, apps/, shared/, architecture.md)
+        name: system map (components.json, apps/, libs/, architecture.md)
         entry: tools/monorepo/system-map.sh --check
         language: script
         pass_filenames: false
-        files: ^(docs/architecture/|apps/|shared/)
+        files: ^(docs/architecture/|apps/|libs/)

@@ -1,8 +1,8 @@
 # Applications
 
-One folder per application (ADR-0010). Apps are loosely related: they are developed together, may use the same shared code from [../shared/](../shared/README.md) and may share data through owned datasets (ADR-0013), but they never import from each other.
+One folder per application (ADR-0010). Apps are loosely related: they are developed together, may use the same libraries from [../libs/](../libs/README.md) and may share data through owned datasets (ADR-0013), but they never import from each other.
 
-The list of apps, what each one writes and reads, and the shared code it uses is the **system map** in [docs/architecture/architecture.md](../docs/architecture/architecture.md#3-system-map-applications-shared-datasets-shared-code), generated from [docs/architecture/components.json](../docs/architecture/components.json).
+The list of apps, what each one writes and reads, and the libraries it uses is the **system map** in [docs/architecture/architecture.md](../docs/architecture/architecture.md#3-system-map-applications-shared-datasets-libraries), generated from [docs/architecture/components.json](../docs/architecture/components.json).
 
 ## Add an app
 

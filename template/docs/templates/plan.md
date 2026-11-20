@@ -19,8 +19,8 @@
 
 ## Architecture impact
 - **System level** (root `docs/architecture/components.json`, then `tools/monorepo/system-map.sh`):
-  - apps / shared components / datasets added: <names, or none; created with `/scaffold`>
-  - new `reads` / `writes` / `mayDependOn` edges: <app → dataset or shared component; never app → app>
+  - apps / libraries / datasets added: <names, or none; created with `/scaffold`>
+  - new `reads` / `writes` / `mayDependOn` edges: <app → dataset or library; never app → app>
   - dataset contract changes: <dataset, version bump (major = breaking, needs a root ADR and a task per reader)>
   - base environment variables added or changed: <keys in the root `.env.example`>
 - **App level** (`apps/<app>/docs/architecture/components.json` and `architecture.md`):

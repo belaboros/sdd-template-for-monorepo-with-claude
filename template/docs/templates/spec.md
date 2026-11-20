@@ -23,7 +23,7 @@
 | FR-1 |             | must                         |
 
 ## Apps and shared data affected
-<Which apps change, which datasets are written or read (and whether a contract changes), which shared code and base env variables are touched. "This app only" is a valid answer.>
+<Which apps change, which datasets are written or read (and whether a contract changes), which libraries and base env variables are touched. "This app only" is a valid answer.>
 
 ## Non-functional requirements
 <Performance, privacy, cost, reliability, accessibility: only the ones that matter here.>

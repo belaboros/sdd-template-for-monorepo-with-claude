@@ -3,10 +3,10 @@
 # docs/architecture/components.json, then re-renders the system map (ADR-0010, ADR-0013).
 #
 #   tools/monorepo/new.sh app     <name> ["one-sentence responsibility"]
-#   tools/monorepo/new.sh shared  <name> ["one-sentence responsibility"]
+#   tools/monorepo/new.sh lib     <name> ["one-sentence responsibility"]
 #   tools/monorepo/new.sh dataset <name> <owner-app> ["one-sentence description"]
 #
-# Names are kebab-case. Readers of a dataset and dependencies on shared code are added afterwards
+# Names are kebab-case. Readers of a dataset and dependencies on libraries are added afterwards
 # by editing components.json (reads / mayDependOn) and running tools/monorepo/system-map.sh.
 set -euo pipefail
 
@@ -33,8 +33,8 @@ jq -e --arg n "$name" 'any(((.components // []) + (.datasets // []))[]; .name ==
 
 case "$kind" in
   app)     target="apps/$name" ;;
-  shared)  target="shared/$name"; [ "$name" != contracts ] || die "'contracts' is reserved" ;;
-  dataset) target="shared/contracts/$name"
+  lib)     target="libs/$name"; [ "$name" != contracts ] || die "'contracts' is reserved for dataset contracts" ;;
+  dataset) target="libs/contracts/$name"
            jq -e --arg o "$owner" 'any((.components // [])[]; .kind == "app" and .name == $o)' "$map" >/dev/null \
              || die "owner '$owner' is not a registered app" ;;
   *) usage ;;
@@ -62,12 +62,12 @@ case "$kind" in
   app) jq --arg n "$name" --arg t "$text" '.components = ((.components // []) + [{
           name: $n, kind: "app", responsibility: $t, paths: ["apps/\($n)/**"],
           mayDependOn: [], reads: [], writes: []}])' "$map" >"$tmp" ;;
-  shared) jq --arg n "$name" --arg t "$text" '.components = ((.components // []) + [{
-          name: $n, kind: "shared", responsibility: $t, paths: ["shared/\($n)/**"],
+  lib) jq --arg n "$name" --arg t "$text" '.components = ((.components // []) + [{
+          name: $n, kind: "lib", responsibility: $t, paths: ["libs/\($n)/**"],
           mayDependOn: [], public: []}])' "$map" >"$tmp" ;;
   dataset) jq --arg n "$name" --arg o "$owner" --arg t "$text" '
           .datasets = ((.datasets // []) + [{name: $n, owner: $o, description: $t,
-            contract: "shared/contracts/\($n)/", location: "${SHARED_DATA_DIR}/\($n)"}])
+            contract: "libs/contracts/\($n)/", location: "${SHARED_DATA_DIR}/\($n)"}])
           | .components |= map(if .name == $o then .writes = ((.writes // []) + [$n]) else . end)' "$map" >"$tmp" ;;
 esac
 cat "$tmp" >"$map"

@@ -21,16 +21,19 @@ for app in smoke-writer smoke-reader; do
   [ -d "apps/$app" ] || tools/monorepo/new.sh app "$app" "Smoke-test app $app." >/dev/null
 done
 tools/monorepo/new.sh dataset smoke-data smoke-writer "Data handed from writer to reader." >/dev/null
-tools/monorepo/new.sh shared smoke-lib "Code both smoke apps use." >/dev/null
-jq '.components |= map(if .name == "smoke-reader" then .reads = ["smoke-data"] | .mayDependOn = ["smoke-lib"] else . end)' \
+tools/monorepo/new.sh lib smoke-lib "Code both smoke apps use." >/dev/null
+tools/monorepo/new.sh lib smoke-base "Code smoke-lib builds on." >/dev/null
+jq '.components |= map(if .name == "smoke-reader" then .reads = ["smoke-data"] | .mayDependOn = ["smoke-lib"]
+                       elif .name == "smoke-lib" then .mayDependOn = ["smoke-base"] else . end)' \
   docs/architecture/components.json >tmp.json && mv tmp.json docs/architecture/components.json
 expect_fail tools/monorepo/system-map.sh --check                      # block is stale now
 tools/monorepo/system-map.sh >/dev/null
 tools/monorepo/system-map.sh --check >/dev/null || fail "system map after render"
 grep -q 'ds_smoke_data -. read by .-> app_smoke_reader' docs/architecture/architecture.md || fail "data flow edge not rendered"
-[ -f apps/smoke-reader/CLAUDE.md ] && [ -f shared/contracts/smoke-data/README.md ] && [ -f shared/smoke-lib/README.md ] || fail "skeleton files"
-! grep -rl '__NAME__\|__TEXT__\|__OWNER__\|__DATE__' apps shared >/dev/null || fail "unreplaced skeleton placeholders"
-ok "scaffold app/shared/dataset, render and check the system map"
+grep -q 'lib_smoke_lib -- uses --> lib_smoke_base' docs/architecture/architecture.md || fail "lib -> lib edge not rendered"
+[ -f apps/smoke-reader/CLAUDE.md ] && [ -f libs/contracts/smoke-data/README.md ] && [ -f libs/smoke-lib/README.md ] && [ ! -e shared ] || fail "skeleton files"
+! grep -rl '__NAME__\|__TEXT__\|__OWNER__\|__DATE__' apps libs >/dev/null || fail "unreplaced skeleton placeholders"
+ok "scaffold app/lib/dataset, render and check the system map"
 
 cp docs/architecture/components.json good.json
 jq '.components |= map(if .name == "smoke-reader" then .mayDependOn = ["smoke-writer"] else . end)' good.json >docs/architecture/components.json
@@ -39,11 +42,17 @@ jq '.components |= map(if .name == "smoke-reader" then .writes = ["smoke-data"] 
 expect_fail tools/monorepo/system-map.sh --check
 cp good.json docs/architecture/components.json; mkdir apps/unregistered
 expect_fail tools/monorepo/system-map.sh --check
-rmdir apps/unregistered; rm good.json
+rmdir apps/unregistered
+jq '.components |= map(if .name == "smoke-base" then .mayDependOn = ["smoke-lib"] else . end)' good.json >docs/architecture/components.json
+expect_fail tools/monorepo/system-map.sh --check                      # lib cycle
+jq '.components |= map(if .name == "smoke-lib" then .mayDependOn = ["smoke-reader"] else . end)' good.json >docs/architecture/components.json
+expect_fail tools/monorepo/system-map.sh --check                      # lib -> app
+cp good.json docs/architecture/components.json; rm good.json
+expect_fail tools/monorepo/new.sh lib contracts
 expect_fail tools/monorepo/new.sh app smoke-writer
 expect_fail tools/monorepo/new.sh app Bad_Name
 expect_fail tools/monorepo/new.sh dataset other-data no-such-app
-ok "rule violations are rejected (app->app, second writer, unregistered app, bad names)"
+ok "rule violations are rejected (app->app, lib->app, lib cycle, second writer, unregistered app, bad and reserved names)"
 
 # --- layered environment ---
 printf 'ANTHROPIC_API_KEY=base-key\nCLAUDE_MODEL=base-model\nSHARED_DATA_DIR=data\nLOG_LEVEL=info   # comment\n' >.env

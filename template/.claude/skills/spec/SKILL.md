@@ -15,7 +15,7 @@ Turn idea `$ARGUMENTS` into an approved specification by interviewing the user.
 ## 2. Interview
 Use AskUserQuestion. Ask about things the user may not have thought through: the real users and their scenarios, scope and non-goals, edge cases and failure modes, data sources, constraints (cost, privacy, latency), what "done" looks like, and tradeoffs. Skip the obvious questions. Ask 1–4 related questions per round and keep going until the open questions are resolved or the user says stop.
 
-**Always settle the scope** (ADR-0011): does this concern one existing app, a new app, or the system (several apps, shared code, a shared dataset or its contract, base environment variables, repo tooling)? Ask which datasets it reads or writes and whether another app depends on what changes. Propose the answer you think fits and let the user confirm.
+**Always settle the scope** (ADR-0011): does this concern one existing app, a new app, or the system (several apps, libraries, a shared dataset or its contract, base environment variables, repo tooling)? Ask which datasets it reads or writes and whether another app depends on what changes. Propose the answer you think fits and let the user confirm.
 
 **After every answer, before your next question,** append each question to the idea file's `## Q&A log` using the format in the template: date, stage `spec`, the question exactly as asked, the options offered, the user's answer verbatim, and its effect. That log is a permanent record and nothing in it gets removed.
 

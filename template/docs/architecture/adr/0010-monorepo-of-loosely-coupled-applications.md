@@ -1,6 +1,6 @@
 # ADR-0010: Develop loosely related applications together in one monorepo
 
-- **Status:** accepted
+- **Status:** accepted; the `shared/` layout is superseded by [ADR-0015](0015-libraries-in-libs-folder.md)
 - **Date:** 2026-11-13
 - **Origin:** foundation decision inherited from [sdd-template-for-monorepo-with-claude](https://github.com/belaboros/sdd-template-for-monorepo-with-claude); builds on ADR-0005 and ADR-0006
 

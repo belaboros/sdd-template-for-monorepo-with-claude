@@ -19,17 +19,17 @@ jq -e . "$map" >/dev/null || { echo "system-map: $map is not valid JSON" >&2; ex
 rule_errors=$(jq -r '
   (.components // []) as $c | (.datasets // []) as $d
   | [$c[] | select(.kind == "app")    | .name] as $apps
-  | [$c[] | select(.kind == "shared") | .name] as $libs
+  | [$c[] | select(.kind == "lib") | .name] as $libs
   | [$d[] | .name] as $ds
   | def deps($n): [$c[] | select(.name == $n) | (.mayDependOn // [])[]];
     def has($v): any(.[]; . == $v);
   ( ([$c[].name] + $ds) | group_by(.) | map(select(length > 1) | .[0]) | .[] | "duplicate name: \(.)" ),
   ( ($c + $d)[] | select(.name | test("^[a-z][a-z0-9-]*$") | not) | "\(.name): names must be kebab-case" ),
-  ( $c[] | select(.kind != "app" and .kind != "shared") | "\(.name): kind must be \"app\" or \"shared\"" ),
+  ( $c[] | select(.kind != "app" and .kind != "lib") | "\(.name): kind must be \"app\" or \"lib\"" ),
   ( $c[] | select((.responsibility // "") == "") | "\(.name): responsibility is missing" ),
   ( $c[] | . as $x | (.mayDependOn // [])[] | . as $v | select(($libs | has($v)) | not)
-      | "\($x.name) -> \(.): only shared components may be depended on; apps never depend on each other (ADR-0010)" ),
-  ( $c[] | select(.kind == "shared") | select(((.reads // []) + (.writes // [])) | length > 0)
+      | "\($x.name) -> \(.): only libraries may be depended on; apps never depend on each other (ADR-0010)" ),
+  ( $c[] | select(.kind == "lib") | select(((.reads // []) + (.writes // [])) | length > 0)
       | "\(.name): only apps read or write datasets (ADR-0013)" ),
   ( $c[] | select(.kind == "app") | . as $x | ((.reads // []) + (.writes // []))[] | . as $v | select(($ds | has($v)) | not)
       | "\($x.name): unknown dataset \(.)" ),
@@ -43,7 +43,7 @@ rule_errors=$(jq -r '
   ( $libs[] as $l
       | {seen: [], next: deps($l)}
       | until(.next | length == 0; .seen as $s | (.next - $s) as $new | {seen: ($s + $new), next: ([$new[] | deps(.)[]] | unique)})
-      | select(.seen | has($l)) | "dependency cycle through shared component \($l)" )
+      | select(.seen | has($l)) | "dependency cycle through library \($l)" )
 ' "$map")
 
 # ---- 2. Declarations match the folders -------------------------------------------------------
@@ -53,8 +53,8 @@ add() { fs_errors="${fs_errors}$1
 while IFS=$'\t' read -r kind name; do
   case "$kind" in
     app)     [ -f "$root/apps/$name/docs/architecture/components.json" ] || add "app $name: apps/$name/docs/architecture/components.json is missing (create apps with tools/monorepo/new.sh app $name)" ;;
-    shared)  [ -d "$root/shared/$name" ] || add "shared component $name: folder shared/$name/ is missing" ;;
-    dataset) [ -f "$root/shared/contracts/$name/README.md" ] || add "dataset $name: contract shared/contracts/$name/README.md is missing" ;;
+    lib)     [ -d "$root/libs/$name" ] || add "library $name: folder libs/$name/ is missing" ;;
+    dataset) [ -f "$root/libs/contracts/$name/README.md" ] || add "dataset $name: contract libs/contracts/$name/README.md is missing" ;;
   esac
 done < <(jq -r '((.components // [])[] | "\(.kind)\t\(.name)"), ((.datasets // [])[] | "dataset\t\(.name)")' "$map" | sort -u)
 for dir in "$root"/apps/*/; do
@@ -75,23 +75,23 @@ fi
 render() {
   jq -r '
     (.components // []) as $c | (.datasets // []) as $d
-    | def id: (if .kind == "app" then "app_" elif .kind == "shared" then "lib_" else "ds_" end) + (.name | gsub("-"; "_"));
+    | def id: (if .kind == "app" then "app_" elif .kind == "lib" then "lib_" else "ds_" end) + (.name | gsub("-"; "_"));
       def esc: gsub("\""; "#quot;");
       def list: if length == 0 then "—" else join(", ") end;
       def app($n): {kind: "app", name: $n} | id;
-      def lib($n): {kind: "shared", name: $n} | id;
+      def lib($n): {kind: "lib", name: $n} | id;
       def ds($n):  {kind: "dataset", name: $n} | id;
       def readers($n): [$c[] | select(.kind == "app" and ((.reads // []) | any(. == $n))) | .name];
     if ($c | length) + ($d | length) == 0 then
-      "_No applications, shared components or datasets yet. Add one with `/scaffold app <name>`._"
+      "_No applications, libraries or datasets yet. Add one with `/scaffold app <name>`._"
     else
       ( "```mermaid", "flowchart LR",
         ( [$c[] | select(.kind == "app")] | select(length > 0)
           | "    subgraph apps [Applications]", (.[] | "        \(id)[\"<b>\(.name)</b><br/><i>\(.responsibility | esc)</i>\"]"), "    end" ),
         ( $d | select(length > 0)
           | "    subgraph data [Shared datasets]", (.[] | "        \({kind: "dataset", name: .name} | id)[(\"<b>\(.name)</b><br/><i>owner: \(.owner)</i>\")]"), "    end" ),
-        ( [$c[] | select(.kind == "shared")] | select(length > 0)
-          | "    subgraph libs [Shared code]", (.[] | "        \(id)[\"<b>\(.name)</b><br/><i>\(.responsibility | esc)</i>\"]"), "    end" ),
+        ( [$c[] | select(.kind == "lib")] | select(length > 0)
+          | "    subgraph libs [Libraries]", (.[] | "        \(id)[\"<b>\(.name)</b><br/><i>\(.responsibility | esc)</i>\"]"), "    end" ),
         ( $c[] | select(.kind == "app") | . as $a | (.writes // [])[] | "    \($a | id) -- writes --> \(ds(.))" ),
         ( $c[] | select(.kind == "app") | . as $a | (.reads // [])[]  | "    \(ds(.)) -. read by .-> \($a | id)" ),
         ( $c[] | . as $a | (.mayDependOn // [])[] | "    \($a | id) -- uses --> \(lib(.))" ),
@@ -99,22 +99,22 @@ render() {
         "    classDef lib fill:#eef,color:#333,stroke:#669",
         "    classDef data fill:#fff4e5,color:#333,stroke:#c80",
         ( [$c[] | select(.kind == "app")    | id] | select(length > 0) | "    class \(join(",")) app" ),
-        ( [$c[] | select(.kind == "shared") | id] | select(length > 0) | "    class \(join(",")) lib" ),
+        ( [$c[] | select(.kind == "lib") | id] | select(length > 0) | "    class \(join(",")) lib" ),
         ( [$d[] | {kind: "dataset", name: .name} | id] | select(length > 0) | "    class \(join(",")) data" ),
         "```", "" ),
       ( [$c[] | select(.kind == "app")] | select(length > 0)
-        | "| App | Responsibility | Writes | Reads | Uses shared code | Docs |",
-          "|-----|----------------|--------|-------|------------------|------|",
+        | "| App | Responsibility | Writes | Reads | Uses libraries | Docs |",
+          "|-----|----------------|--------|-------|----------------|------|",
           (.[] | "| **\(.name)** | \(.responsibility) | \(.writes // [] | list) | \(.reads // [] | list) | \(.mayDependOn // [] | list) | [architecture](../../apps/\(.name)/docs/architecture/architecture.md) · [specs](../../apps/\(.name)/docs/specs/README.md) · [ADRs](../../apps/\(.name)/docs/architecture/adr/README.md) |"),
           "" ),
       ( $d | select(length > 0)
         | "| Dataset | Owner (only writer) | Read by | Contract | Description |",
           "|---------|---------------------|---------|----------|-------------|",
-          (.[] | "| **\(.name)** | \(.owner) | \(readers(.name) | list) | [shared/contracts/\(.name)/](../../shared/contracts/\(.name)/README.md) | \(.description // "") |"),
+          (.[] | "| **\(.name)** | \(.owner) | \(readers(.name) | list) | [libs/contracts/\(.name)/](../../libs/contracts/\(.name)/README.md) | \(.description // "") |"),
           "" ),
-      ( [$c[] | select(.kind == "shared")] | select(length > 0)
-        | "| Shared component | Responsibility | Uses | Used by |",
-          "|------------------|----------------|------|---------|",
+      ( [$c[] | select(.kind == "lib")] | select(length > 0)
+        | "| Library | Responsibility | Uses | Used by |",
+          "|---------|----------------|------|---------|",
           (.[] | . as $l | "| **\(.name)** | \(.responsibility) | \(.mayDependOn // [] | list) | \([$c[] | select((.mayDependOn // []) | any(. == $l.name)) | .name] | list) |"),
           "" )
     end

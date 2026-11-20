@@ -4,7 +4,7 @@ These metrics are evidence that the code stays highly cohesive and loosely coupl
 
 | Level | Units | Declared in | Snapshots in |
 |-------|-------|-------------|--------------|
-| System | apps and shared components | [../components.json](../components.json) | `docs/architecture/metrics/` |
+| System | apps and libraries | [../components.json](../components.json) | `docs/architecture/metrics/` |
 | App | the components inside one app | `apps/<app>/docs/architecture/components.json` | `apps/<app>/docs/architecture/metrics/` |
 
 At system level any dependency from one app to another is a boundary violation. The definitions and thresholds below apply to both levels and exist only here.
@@ -41,17 +41,17 @@ Notes:
   "components": [
     { "name": "assistant", "kind": "app", "responsibility": "Answers questions from processed manuals.",
       "paths": ["apps/assistant/**"], "mayDependOn": ["kg-model"], "reads": ["knowledge-graph"], "writes": [] },
-    { "name": "kg-model", "kind": "shared", "responsibility": "Typed access to the knowledge graph.",
-      "paths": ["shared/kg-model/**"], "mayDependOn": [], "public": ["shared/kg-model/src/kg_model/__init__.py"] }
+    { "name": "kg-model", "kind": "lib", "responsibility": "Typed access to the knowledge graph.",
+      "paths": ["libs/kg-model/**"], "mayDependOn": [], "public": ["libs/kg-model/src/kg_model/__init__.py"] }
   ],
   "datasets": [
     { "name": "knowledge-graph", "owner": "downloader", "description": "Glossary, ontology and graph.",
-      "contract": "shared/contracts/knowledge-graph/", "location": "${SHARED_DATA_DIR}/knowledge-graph" }
+      "contract": "libs/contracts/knowledge-graph/", "location": "${SHARED_DATA_DIR}/knowledge-graph" }
   ]
 }
 ```
 
-`mayDependOn` may only name shared components. Only an app's `writes` may name a dataset it owns.
+`mayDependOn` (of an app or a library) may only name libraries (`kind: "lib"`). Only an app's `writes` may name a dataset it owns.
 
 **App level** (`apps/<app>/docs/architecture/components.json`), paths relative to the repo root:
 

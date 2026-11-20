@@ -12,7 +12,7 @@ credentials*.json
 secrets*.json
 *.secret
 
-# Shared runtime data (ADR-0013): only the README is committed; contracts live in shared/contracts/
+# Shared runtime data (ADR-0013): only the README is committed; contracts live in libs/contracts/
 /data/*
 !/data/README.md
 
