@@ -20,7 +20,8 @@ ok "fresh project passes the system map check"
 for app in smoke-writer smoke-reader; do
   [ -d "apps/$app" ] || tools/monorepo/new.sh app "$app" "Smoke-test app $app." >/dev/null
 done
-tools/monorepo/new.sh dataset smoke-data smoke-writer "Data handed from writer to reader." >/dev/null
+tools/monorepo/new.sh dataset smoke-data smoke-writer ignore "Data handed from writer to reader." >/dev/null
+tools/monorepo/new.sh dataset smoke-seed smoke-writer commit "Small reference data, committed." >/dev/null
 tools/monorepo/new.sh lib smoke-lib "Code both smoke apps use." >/dev/null
 tools/monorepo/new.sh lib smoke-base "Code smoke-lib builds on." >/dev/null
 jq '.components |= map(if .name == "smoke-reader" then .reads = ["smoke-data"] | .mayDependOn = ["smoke-lib"]
@@ -51,8 +52,20 @@ cp good.json docs/architecture/components.json; rm good.json
 expect_fail tools/monorepo/new.sh lib contracts
 expect_fail tools/monorepo/new.sh app smoke-writer
 expect_fail tools/monorepo/new.sh app Bad_Name
-expect_fail tools/monorepo/new.sh dataset other-data no-such-app
-ok "rule violations are rejected (app->app, lib->app, lib cycle, second writer, unregistered app, bad and reserved names)"
+expect_fail tools/monorepo/new.sh dataset other-data no-such-app ignore
+expect_fail tools/monorepo/new.sh dataset other-data smoke-writer
+expect_fail tools/monorepo/new.sh dataset other-data smoke-writer maybe
+cp .gitignore good.gitignore
+grep -vxF '/data/smoke-data/' good.gitignore >.gitignore
+expect_fail tools/monorepo/system-map.sh --check                      # ignore without .gitignore line
+cp good.gitignore .gitignore; echo '/data/smoke-seed/' >>.gitignore
+expect_fail tools/monorepo/system-map.sh --check                      # commit, but listed in .gitignore
+cp good.gitignore .gitignore; rm good.gitignore
+cp docs/architecture/components.json good.json
+jq '.datasets |= map(del(.git))' good.json >docs/architecture/components.json
+expect_fail tools/monorepo/system-map.sh --check                      # no git decision
+cp good.json docs/architecture/components.json; rm good.json
+ok "rule violations are rejected (app->app, lib->app, lib cycle, second writer, unregistered app, bad and reserved names, git choice)"
 
 # --- layered environment ---
 printf 'ANTHROPIC_API_KEY=base-key\nCLAUDE_MODEL=base-model\nSHARED_DATA_DIR=data\nLOG_LEVEL=info   # comment\n' >.env
@@ -71,8 +84,8 @@ grep -q 'CLAUDE_MODEL .*apps/smoke-reader/.env' <<<"$printed" || fail "env --pri
 ! grep -q 'base-key' <<<"$printed" || fail "env --print leaked a value"
 ok "layered env: process > app > base, isolation, --check, --print without values"
 
-for f in .env apps/smoke-reader/.env data/x; do git check-ignore -q "$f" || fail "$f must be git-ignored"; done
-! git check-ignore -q data/README.md || fail "data/README.md must not be ignored"
+for f in .env apps/smoke-reader/.env data/smoke-data/x; do git check-ignore -q "$f" || fail "$f must be git-ignored"; done
+for f in data/README.md data/smoke-seed/x data/unlisted/x; do ! git check-ignore -q "$f" || fail "$f must not be ignored"; done
 ! git check-ignore -q apps/smoke-reader/.env.example || fail ".env.example must not be ignored"
-ok "gitignore covers nested .env files and shared data"
+ok "gitignore covers nested .env files; data/<dataset>/ is ignored only by choice"
 echo "monorepo smoke test passed"

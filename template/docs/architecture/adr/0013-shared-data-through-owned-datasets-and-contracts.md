@@ -1,6 +1,6 @@
 # ADR-0013: Share data through owned datasets with versioned contracts
 
-- **Status:** accepted; the contract location is superseded by [ADR-0015](0015-libraries-in-libs-folder.md)
+- **Status:** accepted; the contract location is superseded by [ADR-0015](0015-libraries-in-libs-folder.md), keeping datasets out of git by [ADR-0016](0016-commit-or-ignore-each-data-folder.md)
 - **Date:** 2026-11-13
 - **Origin:** foundation decision inherited from [sdd-template-for-monorepo-with-claude](https://github.com/belaboros/sdd-template-for-monorepo-with-claude); builds on ADR-0010
 

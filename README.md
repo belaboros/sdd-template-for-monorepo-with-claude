@@ -23,7 +23,7 @@ A [Copier](https://copier.readthedocs.io/) template for a **monorepo of loosely 
 ├── libs/
 │   ├── <lib>/                 # library: source code apps and other libs import, only through public entry points
 │   └── contracts/<dataset>/   # contract of a shared dataset: owner, format, schema, version
-├── data/                      # default SHARED_DATA_DIR (git-ignored)
+├── data/                      # default SHARED_DATA_DIR; each data/<dataset>/ committed or git-ignored by choice
 ├── docs/                      # system level
 │   ├── ideas/                 # every idea, verbatim, with a Q&A log (one number sequence)
 │   ├── specs/                 # cross-app specs + the index of all specs

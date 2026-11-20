@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The system map (ADR-0010, ADR-0013): validates docs/architecture/components.json against the rules
+# The system map (ADR-0010, ADR-0013, ADR-0016): validates docs/architecture/components.json against the rules
 # and the folders on disk, then renders the generated block in docs/architecture/architecture.md.
 #
 #   tools/monorepo/system-map.sh           validate, then regenerate the block
@@ -36,6 +36,8 @@ rule_errors=$(jq -r '
   ( $c[] | select(.kind == "app") | . as $x | (.reads // [])[] | . as $v | select(($x.writes // []) | has($v))
       | "\($x.name): lists \(.) in both reads and writes; the owner only lists writes" ),
   ( $d[] | . as $y | select(($apps | has($y.owner)) | not) | "dataset \(.name): owner \(.owner) is not an app" ),
+  ( $d[] | select(.git != "commit" and .git != "ignore")
+      | "dataset \(.name): git must be \"commit\" or \"ignore\": decide whether data/\(.name)/ is committed (ADR-0016)" ),
   ( $d[] | . as $y | $c[] | select(.kind == "app" and ((.writes // []) | has($y.name)) and .name != $y.owner)
       | "dataset \($y.name): written by \(.name), but only its owner \($y.owner) may write it (ADR-0013)" ),
   ( $d[] | . as $y | select([$c[] | select(.name == $y.owner and ((.writes // []) | has($y.name)))] | length == 0)
@@ -57,6 +59,13 @@ while IFS=$'\t' read -r kind name; do
     dataset) [ -f "$root/libs/contracts/$name/README.md" ] || add "dataset $name: contract libs/contracts/$name/README.md is missing" ;;
   esac
 done < <(jq -r '((.components // [])[] | "\(.kind)\t\(.name)"), ((.datasets // [])[] | "dataset\t\(.name)")' "$map" | sort -u)
+while IFS=$'\t' read -r name git; do
+  listed=0; grep -qxF "/data/$name/" "$root/.gitignore" 2>/dev/null && listed=1
+  case "$git" in
+    ignore) [ "$listed" = 1 ] || add "dataset $name: git is \"ignore\", so .gitignore needs the line /data/$name/ (ADR-0016)" ;;
+    commit) [ "$listed" = 0 ] || add "dataset $name: git is \"commit\", so remove /data/$name/ from .gitignore (ADR-0016)" ;;
+  esac
+done < <(jq -r '(.datasets // [])[] | "\(.name)\t\(.git // "")"' "$map")
 for dir in "$root"/apps/*/; do
   [ -d "$dir" ] || continue
   name="$(basename "$dir")"
