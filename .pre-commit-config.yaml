@@ -32,3 +32,4 @@ repos:
     rev: v1.32.0
     hooks:
       - id: zizmor
+        args: ["--no-progress", "--offline"]  # no GitHub API calls at commit time, even when GH_TOKEN is set

@@ -32,6 +32,7 @@ repos:
     rev: v1.32.0
     hooks:
       - id: zizmor
+        args: ["--no-progress", "--offline"]  # no GitHub API calls at commit time, even when GH_TOKEN is set
 
   # Monorepo rules (ADR-0010, ADR-0013): apps never depend on each other, one writer per dataset,
   # every app and contract folder registered, and the generated system map up to date. Needs jq.
